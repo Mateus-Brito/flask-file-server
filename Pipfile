@@ -1,0 +1,18 @@
+[[source]]
+name = "pypi"
+url = "https://pypi.org/simple"
+verify_ssl = true
+
+[dev-packages]
+
+[packages]
+flask = "*"
+dynaconf = "*"
+flask-login = "*"
+flask-socketio = "*"
+eventlet = "*"
+gunicorn = "*"
+fcntl = "*"
+
+[requires]
+python_version = "3.6"
