@@ -1,5 +1,8 @@
 from flask import Blueprint, render_template
 from app.socketio import socketio
+
+from flask_login import current_user, login_required
+
 from app.views import authenticated_only
 
 import sys
@@ -7,7 +10,8 @@ import sys
 mod_drive = Blueprint('drive', __name__,template_folder='templates')
 
 @mod_drive.route('/')
-def login():
+@login_required
+def index():
     return render_template('portal/index.html')
 
 @socketio.on('my event')

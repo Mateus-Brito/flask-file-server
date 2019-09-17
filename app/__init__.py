@@ -1,14 +1,17 @@
-from flask import Flask
+from flask import Flask, jsonify, redirect, url_for
 from flask_login import LoginManager
 from dynaconf import FlaskDynaconf
 from app.socketio import socketio
 
 from flask_migrate import Migrate
+from flask_wtf.csrf import CSRFError
 
 from app.views import file_server
 from .mod_drive import mod_drive
 
 from .database import db
+from .csrf_protection import csrf
+from .models import User
 
 from itsdangerous import URLSafeTimedSerializer
 
@@ -21,6 +24,7 @@ def create_app():
     FlaskDynaconf(app)
 
     db.init_app(app)
+    csrf.init_app(app)
     migrate = Migrate(app, db)
 
     login_manager = LoginManager()
@@ -38,5 +42,18 @@ def create_app():
     app.register_blueprint(mod_drive, url_prefix='/drive')
 
     socketio.init_app(app)
+
+    @login_manager.user_loader
+    def load_user(user_id):
+        return User.query.get(user_id)
+
+    @app.errorhandler(CSRFError)
+    def handle_csrf_error(e):
+        return jsonify({'message': "Token expirado, por favor atualize a página!"}), 400
+
+    @login_manager.unauthorized_handler
+    def unauthorized_handler():
+        return redirect(url_for("file_server.login"))
+
 
     return app

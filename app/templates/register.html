@@ -1,9 +1,13 @@
 {% from "_formhelpers.html" import render_field %}
+{% from "macros/auth.html" import ajaxSetup %}
+
 <html>
     <head>
 
         <link rel="stylesheet" type="text/css" href="{{ url_for('static', filename='css/materialize.min.css') }}">
         <link rel="stylesheet" type="text/css" href="{{ url_for('static', filename='css/pages/register.css') }}">
+
+        <meta name="csrf-token" content="{{ csrf_token() }}">
 
         <title>Registrar</title>
     </head>
@@ -30,31 +34,10 @@
         <script src="{{ url_for('static', filename='js/materialize.min.js') }}"></script>
         <script src="{{ url_for('static', filename='js/jquery-3.4.1.min.js') }}"></script>
 
+        {{ ajaxSetup("error_msg") }}
+        
         <script>
             $(document).ready(function(){
-
-                $(function() {
-                    $.ajaxSetup({
-                        error: function(jqXHR, exception) {
-                            if (jqXHR.status === 0) {
-                                alert('Not connect.\n Verify Network.');
-                            } else if (jqXHR.status == 404) {
-                                alert('Requested page not found. [404]');
-                            } else if (jqXHR.status == 500) {
-                                alert('Internal Server Error [500].');
-                            } else if (exception === 'parsererror') {
-                                alert('Requested JSON parse failed.');
-                            } else if (exception === 'timeout') {
-                                alert('Time out error.');
-                            } else if (exception === 'abort') {
-                                alert('Ajax request aborted.');
-                            } else {
-                                //alert('Uncaught Error.\n' + jqXHR.responseText);
-                                $('#error_msg').html(JSON.parse(jqXHR.responseText).message);
-                            }
-                        }
-                    });
-                });
 
                 $("form").on("submit", function(e){
                     e.preventDefault();

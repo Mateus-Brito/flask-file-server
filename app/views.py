@@ -1,16 +1,17 @@
-from flask import Blueprint, render_template, redirect, url_for, request, jsonify
+from flask import Blueprint, render_template, redirect, url_for, request, jsonify, current_app
 from flask_login import current_user
 from flask_socketio import disconnect
 
 import functools
 import sys
 from app.socketio import socketio
+from flask_login import logout_user
 
-from .forms import Register
+from .forms import Register, Login
 from .models import User
 from .database import db
 
-from .utils import registerUser
+from .auth import registerUser, loginUser
 
 file_server = Blueprint('file_server', __name__,template_folder='templates')
 
@@ -27,10 +28,27 @@ def authenticated_only(f):
 def index():
     return redirect( url_for('file_server.login') )
 
+@file_server.route('/logout')
+def logout():
+    logout_user()
+    return jsonify({'message': "ok"}),200
 
-@file_server.route('/login')
+@file_server.route('/login', methods=['GET', 'POST'])
 def login():
-    return render_template("login.html")
+    form = Login(request.form)
+
+    if request.method == 'POST' and form.validate():
+
+        response, code = loginUser( form.email.data, form.password.data )
+
+        return jsonify( response ), code
+
+    if form.errors :
+        for fieldName, errorMessages in form.errors.items():
+            for err in errorMessages:
+                return jsonify({'message': str(err), 'id': fieldName}), 400
+
+    return render_template("login.html", form=form)
 
 @file_server.route('/register', methods=['GET', 'POST'])
 def register():
@@ -38,10 +56,9 @@ def register():
 
     if request.method == 'POST' and form.validate():
         
-        result = registerUser( form )
-        print( result, file=sys.stderr)
+        response, code = registerUser( form )
 
-        return jsonify( result )
+        return jsonify( response ), code
 
     if form.errors :
         for fieldName, errorMessages in form.errors.items():

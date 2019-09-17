@@ -17,6 +17,8 @@ flask-wtf = "*"
 flask-sqlalchemy = "*"
 python-dotenv = "*"
 flask-migrate = "*"
+parameterized = "*"
+pytest = "*"
 
 [requires]
 python_version = "3.7"
