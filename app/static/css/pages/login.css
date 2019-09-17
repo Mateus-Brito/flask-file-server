@@ -1,0 +1,6 @@
+.logo_screen{
+    background: linear-gradient(0deg, rgba(16, 19, 18, 0.8), rgba(119, 144, 215, 0.8)),url('/static/img/serverCloud.jpg') no-repeat center center fixed;
+    background-size: cover;
+    height: 100vh;
+    width: 100%;
+}

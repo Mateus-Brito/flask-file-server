@@ -1,0 +1,6 @@
+{% macro render_field(field, col_sm="s12") %}
+<div class="input-field col {{col_sm}}">
+    {{ field(_class='validate',**kwargs)|safe}}
+    {{field.label}}
+</div>
+{% endmacro %}
