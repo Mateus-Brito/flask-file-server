@@ -12,7 +12,14 @@ flask-login = "*"
 flask-socketio = "*"
 eventlet = "*"
 gunicorn = "*"
-fcntl = "*"
+
+wtforms = "*"
+flask-wtf = "*"
+flask-sqlalchemy = "*"
+python-dotenv = "*"
+flask-migrate = "*"
+parameterized = "*"
+pytest = "*"
 
 [requires]
-python_version = "3.6"
+python_version = "3.7"
