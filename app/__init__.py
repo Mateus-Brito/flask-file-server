@@ -1,4 +1,5 @@
 from flask import Flask, jsonify, redirect, url_for
+
 from flask_login import LoginManager
 from dynaconf import FlaskDynaconf
 from app.socketio import socketio
@@ -54,6 +55,5 @@ def create_app():
     @login_manager.unauthorized_handler
     def unauthorized_handler():
         return redirect(url_for("file_server.login"))
-
 
     return app

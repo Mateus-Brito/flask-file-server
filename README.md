@@ -8,7 +8,9 @@ FLASK_APP = 'run.py'
 FLASK_ENV=development
 
 FLASK_SECRET_KEY=<any thing>
+
 FLASK_SQLALCHEMY_DATABASE_URI=sqlite:////tmp/test.db
+
 ```
 
 if you don't have it, install pipenv

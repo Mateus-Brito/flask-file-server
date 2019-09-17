@@ -1,8 +1,10 @@
 from flask import Blueprint, render_template, redirect, url_for, request, jsonify, current_app
+
 from flask_login import current_user
 from flask_socketio import disconnect
 
 import functools
+
 import sys
 from app.socketio import socketio
 from flask_login import logout_user

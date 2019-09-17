@@ -12,6 +12,7 @@ flask-login = "*"
 flask-socketio = "*"
 eventlet = "*"
 gunicorn = "*"
+
 wtforms = "*"
 flask-wtf = "*"
 flask-sqlalchemy = "*"
