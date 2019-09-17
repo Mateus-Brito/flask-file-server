@@ -6,11 +6,11 @@ import functools
 import sys
 from app.socketio import socketio
 
-from .forms import Register
+from .forms import Register, Login
 from .models import User
 from .database import db
 
-from .utils import registerUser
+from .utils import registerUser, loginUser
 
 file_server = Blueprint('file_server', __name__,template_folder='templates')
 
@@ -30,6 +30,19 @@ def index():
 
 @file_server.route('/login')
 def login():
+    form = Login(request.form)
+
+    if request.method == 'POST' and form.validate():
+
+        response, code = loginUser( form.email.data, form.password.data )
+
+        return jsonify( response ), code
+
+    if form.errors :
+        for fieldName, errorMessages in form.errors.items():
+            for err in errorMessages:
+                return jsonify({'message': str(err), 'id': fieldName}), 400
+
     return render_template("login.html")
 
 @file_server.route('/register', methods=['GET', 'POST'])
@@ -38,10 +51,9 @@ def register():
 
     if request.method == 'POST' and form.validate():
         
-        result = registerUser( form )
-        print( result, file=sys.stderr)
+        response, code = registerUser( form )
 
-        return jsonify( result )
+        return jsonify( response ), code
 
     if form.errors :
         for fieldName, errorMessages in form.errors.items():

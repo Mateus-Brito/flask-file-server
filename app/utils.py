@@ -2,19 +2,19 @@ from .models import User
 from .database import db
 
 def userAlreadyExist( email ):
-    return User.query.filter_by(email=email).count() > 0
+    return db.session.query(User.id).filter_by(email=email).count() > 0
 
 def passwordsAreIdentical( password1, password2):
     return password1 == password2
 
 def registerUser( form ):
 
-    if userAlreadyExist( form.email.data ):
-        message = {'message': "Este email já está cadastrado"}
+    if not passwordsAreIdentical(form.password.data, form.rpassword.data):
+        message = {'message': "As senhas digitadas são diferentes"}
         result_code = 400
 
-    elif passwordsAreIdentical(form.password.data, form.rpassword.data):
-        message = {'message': "As senhas digitadas são diferentes"}
+    elif userAlreadyExist( form.email.data ):
+        message = {'message': "Este email já está cadastrado"}
         result_code = 400
 
     else:
@@ -22,9 +22,22 @@ def registerUser( form ):
                     email=form.email.data, password=form.password.data)
 
         db.session.add(user)
-        db.commit()
+        db.session.commit()
 
         message = {'message': "Cadastro realizado"}
         result_code = 200
 
     return (message, result_code)
+
+def loginUser( email, password ):
+
+    message = ""
+    code = 200
+
+    user = User.query.filter_by(email=email, password=password).first()
+    
+    if user:
+        pass
+    else:
+        pass
+    return message, code
