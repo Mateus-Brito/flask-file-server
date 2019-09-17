@@ -1,0 +1,32 @@
+<html>
+    <head>
+
+        <link rel="stylesheet" type="text/css" href="{{ url_for('static', filename='css/materialize.min.css') }}">
+        <link rel="stylesheet" type="text/css" href="{{ url_for('static', filename='css/pages/login.css') }}">
+
+        <title>Login</title>
+    </head>
+    <body>
+        <div class="container-fluid">
+            <div class="row" style="margin:0">
+                <div class="col m6 logo_screen"></div>
+                
+                <div class="col m6 s12">
+                    <div class="input-field col s12">
+                        <input id="first_name" type="text" class="validate">
+                        <label for="first_name">Email</label>
+                      </div>
+                      <div class="input-field col s12">
+                        <input id="last_name" type="text" class="validate">
+                        <label for="last_name">Senha</label>
+                      </div>
+
+                      <p id="error_msg"></p>
+                      <a class="waves-effect waves-light btn">Acessar</a>
+                      <p>Não possuí uma conta? <a href="/register">Crie agora</a></p>
+                </div>
+            </div>
+        </div>
+        <script src="{{ url_for('static', filename='js/materialize.min.js') }}"></script>
+    </body>
+</html>

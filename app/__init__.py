@@ -3,8 +3,12 @@ from flask_login import LoginManager
 from dynaconf import FlaskDynaconf
 from app.socketio import socketio
 
+from flask_migrate import Migrate
+
 from app.views import file_server
 from .mod_drive import mod_drive
+
+from .database import db
 
 from itsdangerous import URLSafeTimedSerializer
 
@@ -15,6 +19,9 @@ def create_app():
     app.url_map.strict_slashes = False
 
     FlaskDynaconf(app)
+
+    db.init_app(app)
+    migrate = Migrate(app, db)
 
     login_manager = LoginManager()
     login_manager.init_app(app)

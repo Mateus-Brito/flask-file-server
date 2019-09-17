@@ -1,0 +1,77 @@
+{% from "_formhelpers.html" import render_field %}
+<html>
+    <head>
+
+        <link rel="stylesheet" type="text/css" href="{{ url_for('static', filename='css/materialize.min.css') }}">
+        <link rel="stylesheet" type="text/css" href="{{ url_for('static', filename='css/pages/register.css') }}">
+
+        <title>Registrar</title>
+    </head>
+    <body>
+        <div class="container-fluid">
+            <form class="row" style="margin:0" method="post">
+                <div class="col m6 logo_screen"></div>
+                
+                <div class="col m6 s12">
+
+                    {{ render_field(form.first_name, "s6") }}
+                    {{ render_field(form.last_name, "s6") }}
+                    {{ render_field(form.email) }}
+                    {{ render_field(form.password) }}
+                    {{ render_field(form.rpassword) }}
+
+                    <p id="error_msg"></p>
+                    <button type="submit" class="waves-effect waves-light btn">Cadastrar</button>
+
+                      <p>Já possuí uma conta? <a href="/login">Acessar</a></p>
+                </div>
+            </div>
+        </div>
+        <script src="{{ url_for('static', filename='js/materialize.min.js') }}"></script>
+        <script src="{{ url_for('static', filename='js/jquery-3.4.1.min.js') }}"></script>
+
+        <script>
+            $(document).ready(function(){
+
+                $(function() {
+                    $.ajaxSetup({
+                        error: function(jqXHR, exception) {
+                            if (jqXHR.status === 0) {
+                                alert('Not connect.\n Verify Network.');
+                            } else if (jqXHR.status == 404) {
+                                alert('Requested page not found. [404]');
+                            } else if (jqXHR.status == 500) {
+                                alert('Internal Server Error [500].');
+                            } else if (exception === 'parsererror') {
+                                alert('Requested JSON parse failed.');
+                            } else if (exception === 'timeout') {
+                                alert('Time out error.');
+                            } else if (exception === 'abort') {
+                                alert('Ajax request aborted.');
+                            } else {
+                                //alert('Uncaught Error.\n' + jqXHR.responseText);
+                                $('#error_msg').html(JSON.parse(jqXHR.responseText).message);
+                            }
+                        }
+                    });
+                });
+
+                $("form").on("submit", function(e){
+                    e.preventDefault();
+                    var formData = new FormData($(this)[0]);
+                    $.ajax({
+                        type: "post",
+                        url: "{{ url_for('file_server.register')}}",
+                        data: formData,
+                        processData: false,
+                        contentType: false,
+                        success: function(result){
+                            alert('ok');
+                        }});
+                    
+                });
+
+            });
+        </script>
+    </body>
+</html>
