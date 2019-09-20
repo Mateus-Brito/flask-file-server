@@ -1,0 +1,10 @@
+#drive_content
+{
+    width: 100%;
+    height: calc(100vh - 80px);
+}
+
+#folders_content > div{
+    display: inline-block;
+    margin: 10px 5px;
+}
