@@ -7,12 +7,10 @@ verify_ssl = true
 
 [packages]
 flask = "*"
-dynaconf = "*"
 flask-login = "*"
 flask-socketio = "*"
 eventlet = "*"
 gunicorn = "*"
-
 wtforms = "*"
 flask-wtf = "*"
 flask-sqlalchemy = "*"
@@ -20,6 +18,9 @@ python-dotenv = "*"
 flask-migrate = "*"
 parameterized = "*"
 pytest = "*"
+dynaconf = {extras = ["py"],version = "*"}
+pil = "*"
+pillow = "*"
 
 [requires]
 python_version = "3.7"

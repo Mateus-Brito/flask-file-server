@@ -1,0 +1,15 @@
+nav{
+    background-color: #FFA000;
+
+    height: 50px;
+    line-height: 50px;
+}
+.collection-item
+{
+    color: #000 !important;
+}
+.collection .collection-item.active
+{
+    background: #FFA000;
+    color: #fff !important;
+}

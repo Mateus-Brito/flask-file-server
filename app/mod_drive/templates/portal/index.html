@@ -6,11 +6,11 @@
 
 {% block content %}
 <div class="container_fluid"> 
-    <form action="/file-upload" class="dropzone" id="drive_content">
+    <form action="/file-upload" id="drive_content">
         <h3>Pastas</h3>
         <div id="folders_content">
             {% for i in range(10) %}
-            <div>
+            <div class="folder">
                 <div>
                     <img src="{{url_for('static', filename='img/icons/folder.png')}}" />
                 </div>
@@ -26,15 +26,66 @@
 </div>
 
 <script src="{{ url_for('static', filename='js/dropzone.js') }}"></script>
-<script>
-    //var myDropzone = new Dropzone("div#myId", { url: "/file/post"});
-</script>
 
 <script src="//cdnjs.cloudflare.com/ajax/libs/socket.io/2.2.0/socket.io.js" integrity="sha256-yr4fRk/GU1ehYJPAs8P4JlTgu0Hdsp4ZKrx8bDEDC3I=" crossorigin="anonymous"></script>
+
+{% endblock %}
+
+{% block after_jquery %}
 <script type="text/javascript" charset="utf-8">
     var socket = io();
     socket.on('connect', function() {
         socket.emit('my event', {data: 'I\'m connected!'});
     });
+
+    $(document).ready(function(e){
+        $('.folder').on('click',function(e){
+            
+            socket.emit('my event', {data: 'work !'});
+
+        });
+
+        function handlePictureDropUpload(base64String ,fileName)
+        {
+            console.log( base64String );
+            console.log( fileName)
+
+            socket.emit('my event', {data: 
+                {
+                    base64File: base64String,
+                    fileName: fileName
+                }
+            });
+        }
+
+        var myDropzone = new Dropzone("#drive_content", {
+                init: function() {
+                var that = this;
+                that.on('sending', function(file) {
+
+                    var reader = new FileReader();
+                reader.onload = function(event) {
+                    // event.target.result contains base64 encoded image
+                    var base64String = event.target.result;
+                    var fileName = file.name
+                    console.log( event );
+                    console.log( file )
+                    handlePictureDropUpload(base64String ,fileName );
+                };
+                reader.readAsDataURL(file);
+
+
+                    if ( 1 ) {
+                        that.removeFile(file);
+                    }
+ 
+                    
+
+                })
+            },
+        });
+
+    });
+
 </script>
 {% endblock %}

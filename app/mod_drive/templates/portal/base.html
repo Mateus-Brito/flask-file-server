@@ -2,7 +2,12 @@
     <head>
 
         <link rel="stylesheet" type="text/css" href="{{ url_for('static', filename='css/materialize.min.css') }}">
+        <link rel="stylesheet" type="text/css" href="{{ url_for('static', filename='css/drive.css') }}">
+
         {% block styles %}{% endblock %}
+
+        <title>Drive</title>
+
 
     </head>
     <body> 
@@ -10,13 +15,43 @@
             <div class="nav-wrapper">
                 <a href="#" class="brand-logo">Logo</a>
                 <ul id="nav-mobile" class="right hide-on-med-and-down">
-                    <li><a href="sass.html">Sass</a></li>
-                    <li><a href="badges.html">Components</a></li>
-                    <li><a href="collapsible.html">JavaScript</a></li>
+                    <li><a class='dropdown-trigger' href='#' data-target='dropdown1'>{{current_user.first_name}}</a></li>
+                    <ul id='dropdown1' class='dropdown-content'>
+                      <li><a href="#!">one</a></li>
+                      <li><a href="#!">two</a></li>
+                      <li class="divider" tabindex="-1"></li>
+                      <li><a href="#!">three</a></li>
+                      <li><a href="#!"><i class="material-icons">view_module</i>four</a></li>
+                      <li><a href="#!"><i class="material-icons">cloud</i>five</a></li>
+                    </ul>
                 </ul>
             </div>
         </nav>
-        {% block content %}{% endblock %}
+        <div class="container-fluid">
+            <div class="row">
+                <div class="col m2" style="padding: 0">
+                    <p>Meu Drive</p>
+                    <div class="collection">
+                        <a href="#!" class="collection-item">Arquivos</a>
+                        <a href="#!" class="collection-item active">Recentes</a>
+                        <a href="#!" class="collection-item">Alvin</a>
+                        <a href="#!" class="collection-item">Alvin</a>
+                      </div>
+                            
+                </div>
+                <div class="col s9">
+                    {% block content %}{% endblock %}
+                </div>
+            </div>
+        </div>
+        <script src="{{ url_for('static', filename='js/jquery-3.4.1.min.js') }}"></script>
         <script src="{{ url_for('static', filename='js/materialize.min.js') }}"></script>
+
+        {% block after_jquery %} {% endblock %}
+        <script>
+            $(document).ready(function(e){
+                $('.dropdown-trigger').dropdown();
+            });
+        </script>
     </body>
 </html>

@@ -1,4 +1,5 @@
 import sys
+import uuid
 
 from .models import User
 from .database import db
@@ -22,7 +23,8 @@ def registerUser( form ):
         result_code = 400
 
     else:
-        user = User(first_name=form.first_name.data, last_name=form.last_name.data, \
+        own_uuid = str(uuid.uuid4())
+        user = User(uuid=own_uuid,first_name=form.first_name.data, last_name=form.last_name.data, \
                     email=form.email.data, password=form.password.data)
 
         db.session.add(user)

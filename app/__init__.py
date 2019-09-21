@@ -15,6 +15,9 @@ from .csrf_protection import csrf
 from .models import User
 
 from itsdangerous import URLSafeTimedSerializer
+from dotenv import load_dotenv
+
+load_dotenv()
 
 def create_app():
 

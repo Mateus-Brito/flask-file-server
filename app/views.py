@@ -6,12 +6,14 @@ from flask_socketio import disconnect
 import functools
 
 import sys
+import os
 from app.socketio import socketio
 from flask_login import logout_user
 
 from .forms import Register, Login
 from .models import User
 from .database import db
+from .utils import createRootUser
 
 from .auth import registerUser, loginUser
 
@@ -59,6 +61,10 @@ def register():
     if request.method == 'POST' and form.validate():
         
         response, code = registerUser( form )
+
+        if code == 200:
+            loginUser( form.email.data, form.password.data )
+            createRootUser()
 
         return jsonify( response ), code
 
