@@ -35,10 +35,13 @@ def index():
 @file_server.route('/logout')
 def logout():
     logout_user()
-    return jsonify({'message': "ok"}),200
+    return redirect( url_for('file_server.login'))
 
 @file_server.route('/login', methods=['GET', 'POST'])
 def login():
+    if current_user.is_authenticated:
+        return redirect(url_for("drive.index"))
+
     form = Login(request.form)
 
     if request.method == 'POST' and form.validate():

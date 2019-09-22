@@ -2,54 +2,201 @@
 
 {% block styles %}
     <link rel="stylesheet" type="text/css" href="{{ url_for('static', filename='css/pages/drive.css') }}">
+    <link href="https://fonts.googleapis.com/icon?family=Material+Icons" rel="stylesheet">
 {% endblock %}
 
 {% block content %}
-<div class="container_fluid"> 
+<div class="col m12 custom-menu">
+    <a class='dropdown-trigger btn' href='#' data-target='dropdown-button'>Novo +</a>
+    <a id="load_file" class='btn' >Carregar +</a>
+    
+    <ul id='dropdown-button' class='dropdown-content'>
+        <li><a class="modal-trigger" href="#new_folder">Pasta</a></li>
+    </ul>
+
+    <div class="right menu-select" style="display: none">
+        <a id="delete-btn" class="btn"><i class="material-icons left">delete</i> <span>Deletar</span></a>
+    </div>
+</div>
+<div class="col m12"> 
     <form action="/file-upload" id="drive_content">
         <h3>Pastas</h3>
-        <div id="folders_content">
-            {% for i in range(10) %}
-            <div class="folder">
-                <div>
-                    <img src="{{url_for('static', filename='img/icons/folder.png')}}" />
-                </div>
-                <div>
-                    Minha pasta
-                </div>
-            </div>
-            {% endfor %}
+        <div class="row" id="folder_content">
+
         </div>
         <h3>Arquivos</h3>
-        <div id="files_content"></div>
+        <div class="row" id="file_content"></div>
     </form>
+</div>
+<div id="new_folder" class="modal">
+    <div class="modal-content">
+        <div class="row" style="margin:0">
+            <div class="col s12">
+                <p>Criar uma nova pasta</p>
+            </div>
+            <div class="input-field col s12">
+                <input placeholder="Placeholder" autocomplete="off" id="folder_name" type="text" class="validate">
+                <label for="folder_name">Insira o nome</label>
+            </div>
+        </div>
+    </div>
+    <div class="modal-footer">
+        <a id="new_folder_button" class="waves-effect waves-green btn-flat">Criar</a>
+    </div>
 </div>
 
 <script src="{{ url_for('static', filename='js/dropzone.js') }}"></script>
 
 <script src="//cdnjs.cloudflare.com/ajax/libs/socket.io/2.2.0/socket.io.js" integrity="sha256-yr4fRk/GU1ehYJPAs8P4JlTgu0Hdsp4ZKrx8bDEDC3I=" crossorigin="anonymous"></script>
 
+<script type="text/html" id="folder">
+    <div class="folder" data-folder=${name}>
+        <div>
+            <img src="{{url_for('static', filename='img/icons/folder.png')}}" />
+        </div>
+        <div>
+            ${name}
+        </div>
+    </div>
+</script>
+<script type="text/html" id="file">
+    <div class="file" data-filename=${name}>
+        <div>
+            <img src="{{url_for('static', filename='img/icons/file.png')}}" />
+        </div>
+        <div>
+            ${name}
+        </div>
+    </div>
+</script>
+
 {% endblock %}
 
 {% block after_jquery %}
+<script src="{{ url_for('static', filename='js/jquery.tmpl.min.js') }}"></script>
+<script src="{{ url_for('static', filename='js/selectable.min.js') }}"></script>
+
 <script type="text/javascript" charset="utf-8">
+
+    var current_path = "";
+    var selected_items = [];
+    
     var socket = io();
+    const selectable = new Selectable({ignore: ".custom-menu"});
+
+    const updateCounter = (e, selected, unselected) => {
+        if( selected.length == 0)
+        {
+            $(".menu-select").css("display", "none");
+            delete_items = [];
+        }else
+        {
+            selected_items = selected;
+     
+            $(".menu-select").css("display", "block");
+        }
+    };
+
+    selectable.on('end', updateCounter);
+
     socket.on('connect', function() {
-        socket.emit('my event', {data: 'I\'m connected!'});
+        socket.emit('join', {});
+    });
+
+    socket.on('folder_added', function( json ) {
+        $("#folder").tmpl({name: json['data']['name']}).appendTo("#folder_content");
+
+        var folder = document.querySelectorAll(`.folder[data-folder="${json['data']['name']}"]`);
+        selectable.add( folder );
+    });
+
+    socket.on('file_added', function( json ) {
+        $("#file").tmpl({name: json['data']['name']}).appendTo("#file_content");
+
+        var folder = document.querySelectorAll(`.file[data-filename="${json['data']['name']}"]`);
+        selectable.add( folder );
+    });
+
+    socket.on('folder_removed', function( json ) {
+        JSON.parse(json['data']['folders']).map(function(item, index){
+            $(".folder[data-folder='" + item + "']").remove();
+        })
+    });
+
+    socket.on('file_removed', function( json ) {
+        JSON.parse(json['data']['files']).map(function(item, index){
+            $(".file[data-filename='" + item + "']").remove();
+        })
+    });
+
+    socket.on('load_content', function(json) {
+        $("#folder_content").html("");
+        $("#file_content").html("");
+
+        if( json && json['folders'])
+        {
+            json['folders'].map(function(item, index)
+            {
+                $("#folder").tmpl({name: item}).appendTo("#folder_content");
+            });
+
+            json['files'].map(function(item, index)
+            {
+                $("#file").tmpl({name: item}).appendTo("#file_content");
+            });
+
+            var folder = document.querySelectorAll(".folder,.file");
+            selectable.add( folder );
+        }
     });
 
     $(document).ready(function(e){
-        $('.folder').on('click',function(e){
+
+        $('#delete-btn').on('click',function(e){
             
-            socket.emit('my event', {data: 'work !'});
+            var files = [];
+            var folders = [];
+
+            selected_items.map(function(item) {
+                if (item['node']['dataset'].hasOwnProperty('folder')){
+                    folders.push( item['node']['dataset']['folder']);
+                }
+                else if(item['node']['dataset'].hasOwnProperty('filename'))
+                {
+                    files.push( item['node']['dataset']['filename']);
+                }
+            });
+
+            socket.emit('delete_items', {
+                data: {
+                    files: JSON.stringify( files ),
+                    folders: JSON.stringify( folders ),
+                    path: current_path,
+                }
+            });
+        });
+
+        $('#new_folder_button').on('click',function(e){
+
+            var filename = $("#folder_name").val();
+
+            craateFolder( filename );
+
+            $('#new_folder').modal('close');
 
         });
 
+        function craateFolder( name ){
+            socket.emit('new_folder', {
+                data: {
+                    filename: name,
+                    path: current_path,
+                }
+            });
+        }
+
         function handlePictureDropUpload(base64String ,fileName)
         {
-            console.log( base64String );
-            console.log( fileName)
-
             socket.emit('my event', {data: 
                 {
                     base64File: base64String,
@@ -58,7 +205,9 @@
             });
         }
 
-        var myDropzone = new Dropzone("#drive_content", {
+        var myDropzone = new Dropzone(".content", {
+            url: "/",
+            clickable: "#load_file",
                 init: function() {
                 var that = this;
                 that.on('sending', function(file) {
@@ -68,19 +217,11 @@
                     // event.target.result contains base64 encoded image
                     var base64String = event.target.result;
                     var fileName = file.name
-                    console.log( event );
-                    console.log( file )
+
                     handlePictureDropUpload(base64String ,fileName );
                 };
                 reader.readAsDataURL(file);
-
-
-                    if ( 1 ) {
-                        that.removeFile(file);
-                    }
- 
-                    
-
+                    that.removeFile(file);
                 })
             },
         });

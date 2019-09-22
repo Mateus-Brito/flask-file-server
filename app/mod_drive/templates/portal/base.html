@@ -8,38 +8,34 @@
 
         <title>Drive</title>
 
-
     </head>
     <body> 
         <nav>
-            <div class="nav-wrapper">
-                <a href="#" class="brand-logo">Logo</a>
+            <div class="nav-wrapper custom-menu">
+                <a href="#" class="brand-logo">Drive</a>
                 <ul id="nav-mobile" class="right hide-on-med-and-down">
-                    <li><a class='dropdown-trigger' href='#' data-target='dropdown1'>{{current_user.first_name}}</a></li>
-                    <ul id='dropdown1' class='dropdown-content'>
+                    <li><a class='dropdown-trigger' href='#' data-target='dropdown-user'>{{current_user.first_name}}</a></li>
+                    <ul id='dropdown-user' class='dropdown-content'>
                       <li><a href="#!">one</a></li>
-                      <li><a href="#!">two</a></li>
                       <li class="divider" tabindex="-1"></li>
-                      <li><a href="#!">three</a></li>
-                      <li><a href="#!"><i class="material-icons">view_module</i>four</a></li>
-                      <li><a href="#!"><i class="material-icons">cloud</i>five</a></li>
+                      <li><a href="{{url_for('file_server.logout')}}">sair</a></li>
                     </ul>
                 </ul>
             </div>
         </nav>
         <div class="container-fluid">
             <div class="row">
-                <div class="col m2" style="padding: 0">
+                <div class="col m2 custom-menu" style="padding: 0">
                     <p>Meu Drive</p>
                     <div class="collection">
                         <a href="#!" class="collection-item">Arquivos</a>
                         <a href="#!" class="collection-item active">Recentes</a>
-                        <a href="#!" class="collection-item">Alvin</a>
-                        <a href="#!" class="collection-item">Alvin</a>
+                        <a href="#!" class="collection-item">Compartilhado</a>
+                        <a href="#!" class="collection-item">Explorar</a>
                       </div>
                             
                 </div>
-                <div class="col s9">
+                <div class="col s9 content">
                     {% block content %}{% endblock %}
                 </div>
             </div>
@@ -51,6 +47,7 @@
         <script>
             $(document).ready(function(e){
                 $('.dropdown-trigger').dropdown();
+                $('.modal').modal();
             });
         </script>
     </body>

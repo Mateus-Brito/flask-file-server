@@ -1,10 +1,13 @@
 import sys
 import uuid
+import hashlib
 
 from .models import User
 from .database import db
 
 from flask_login import login_user
+
+getHash512 = lambda text : hashlib.sha512( str(text).encode("UTF-8")).hexdigest()
 
 def userAlreadyExist( email ):
     return db.session.query(User.id).filter_by(email=email).count() > 0
@@ -24,8 +27,9 @@ def registerUser( form ):
 
     else:
         own_uuid = str(uuid.uuid4())
+        hash_password = getHash512(form.password.data)
         user = User(uuid=own_uuid,first_name=form.first_name.data, last_name=form.last_name.data, \
-                    email=form.email.data, password=form.password.data)
+                    email=form.email.data, password=hash_password)
 
         db.session.add(user)
         db.session.commit()
@@ -40,7 +44,8 @@ def loginUser( email, password ):
     message = ""
     code = 200
 
-    user = User.query.filter_by(email=email, password=password).first()
+    hash_password = getHash512(password)
+    user = User.query.filter_by(email=email, password=hash_password).first()
 
     if user:
         login_user( user )

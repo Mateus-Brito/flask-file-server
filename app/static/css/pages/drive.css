@@ -4,7 +4,7 @@
     height: calc(100vh - 80px);
 }
 
-#folders_content > div{
+#folder_content > div, #file_content > div{
     display: inline-block;
     margin: 10px 5px;
 }

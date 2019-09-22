@@ -1,5 +1,8 @@
 from flask import Blueprint, render_template, current_app
 from app.socketio import socketio
+
+from flask_socketio import send, emit
+from flask_socketio import join_room, leave_room
 from werkzeug.utils import secure_filename
 
 from flask_login import current_user, login_required
@@ -8,9 +11,11 @@ from app.views import authenticated_only
 from app.utils import createRootUser
 
 import sys
+import shutil
 import os
 import re
 import base64
+import json
 from PIL import Image
 from io import BytesIO
 
@@ -21,37 +26,125 @@ mod_drive = Blueprint('drive', __name__,template_folder='templates')
 def index():
     return render_template('portal/index.html')
 
+@socketio.on('join')
+def on_join(data):
+    room = current_user.uuid
+    join_room(room)
+
+    emit('load_content', {
+        'folders': getFolderList('.'),
+        'files': getFileList('.'),
+    })
+
+@socketio.on('new_folder')
+@authenticated_only
+def makeFolder( json_obj ):
+    if 'filename' in json_obj['data']:
+        createFolder( json_obj['data']['filename'], json_obj['data']['path'])
+
+@socketio.on('delete_items')
+@authenticated_only
+def deleteItems( json_obj ):
+    files = json.loads( json_obj['data']['files'] )
+    folders = json.loads( json_obj['data']['folders'] )
+    
+    removeFiles( files, json_obj['data']['path'])
+    removeFolders( folders, json_obj['data']['path'])
+
 @socketio.on('my event')
 @authenticated_only
-def handle_my_custom_event(json):
-    print('received json: ' + str(json))
-    if 'fileName' in json['data']:
-        save_file( json['data']['fileName'], json['data']['base64File']  )
+def handle_my_custom_event(json_obj):
+
+    if 'fileName' in json_obj['data']:
+        save_file( json_obj['data']['fileName'], json_obj['data']['base64File']  )
 
 def save_file(filename, b64_string):
     createRootUser()
-    path_file = current_app.config['DRIVE_FOLDER'] + f"/{str(current_user.uuid)}/" + secure_filename( filename )
+
+    path_file = current_app.config['DRIVE_FOLDER'] + f"{str(current_user.uuid)}/" + secure_filename( filename )
 
     filename, file_extension = os.path.splitext( path_file )
     file_extension = str(file_extension).lower()
+    
+    
+    b64_string = b64_string[ b64_string.find(",")+1 :]
 
-    if b64_string[-1:] != "=":
-        b64_string += "=="
-
-    if file_extension == ".txt":
-        b64_string = b64_string.replace("data:text/plain;base64,", "")
-
-    elif file_extension == ".png":
+    if file_extension == ".png":
         b64_string = re.sub('^data:image/.+;base64,', '', b64_string)
         byte_data = base64.b64decode( b64_string )
 
         image_data = BytesIO( byte_data )
         img = Image.open(image_data)
         img.save(path_file , "PNG")
+        #emit event  
+        createFile( filename )
         return
 
     byte_data = base64.b64decode( b64_string )
 
     with open(path_file, "wb") as f:
         f.write( byte_data )
+
+    #emit event    
+    createFile( filename )
     
+def createFile( name ):
+    name = os.path.basename( name )
+    emit('file_added', {
+        'data': {
+            'name': name,
+        }
+    }, room=current_user.uuid)
+
+def createFolder( name, path ):
+    
+    name = secure_filename(name)
+    directory = current_app.config['DRIVE_FOLDER'] + f"{current_user.uuid}/{name}" 
+    print(directory, file=sys.stderr)
+    if not os.path.exists( directory ):
+        os.makedirs(directory)
+
+    emit('folder_added', {
+        'data': {
+            'name': name,
+        }
+    }, room=current_user.uuid)
+
+def getFolderList( path ):
+    path = current_app.config['DRIVE_FOLDER'] + f"/{str(current_user.uuid)}/" + secure_filename( path )
+
+    return [o for o in os.listdir(path) if os.path.isdir(os.path.join(path,o))]
+
+def getFileList( path ):
+    path = current_app.config['DRIVE_FOLDER'] + f"/{str(current_user.uuid)}/" + secure_filename( path )
+
+    return [o for o in os.listdir(path) if not os.path.isdir(os.path.join(path,o))]
+
+def removeFiles( items, path):
+    path = current_app.config['DRIVE_FOLDER'] + f"/{str(current_user.uuid)}/" + secure_filename( path )
+
+    for item in items:
+        file_path = f"{path}/{item}"
+        if os.path.isfile( file_path ):
+            os.remove( file_path )
+    
+    emit('file_removed', {
+        'data': {
+            'files': json.dumps( items ),
+        }
+    }, room=current_user.uuid)
+    
+def removeFolders( items, path):
+    path = current_app.config['DRIVE_FOLDER'] + f"/{str(current_user.uuid)}/" + secure_filename( path )
+
+    for item in items:
+        file_path = f"{path}/{item}"
+        print( file_path, file=sys.stderr)
+        if os.path.isdir( file_path ):
+            shutil.rmtree(file_path, ignore_errors=True)
+
+    emit('folder_removed', {
+        'data': {
+            'folders': json.dumps( items ),
+        }
+    }, room=current_user.uuid)

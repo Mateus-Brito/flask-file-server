@@ -1,5 +1,6 @@
 flask_session/
 migrations/
+drive_database/
 .vscode/
 
 *.pyc
