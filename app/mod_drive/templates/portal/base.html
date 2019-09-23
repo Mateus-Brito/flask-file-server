@@ -6,6 +6,8 @@
 
         {% block styles %}{% endblock %}
 
+        <meta name="csrf-token" content="{{ csrf_token() }}">
+
         <title>Drive</title>
 
     </head>
@@ -16,7 +18,6 @@
                 <ul id="nav-mobile" class="right hide-on-med-and-down">
                     <li><a class='dropdown-trigger' href='#' data-target='dropdown-user'>{{current_user.first_name}}</a></li>
                     <ul id='dropdown-user' class='dropdown-content'>
-                      <li><a href="#!">one</a></li>
                       <li class="divider" tabindex="-1"></li>
                       <li><a href="{{url_for('file_server.logout')}}">sair</a></li>
                     </ul>

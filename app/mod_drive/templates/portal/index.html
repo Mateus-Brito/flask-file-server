@@ -80,6 +80,7 @@
 {% block after_jquery %}
 <script src="{{ url_for('static', filename='js/jquery.tmpl.min.js') }}"></script>
 <script src="{{ url_for('static', filename='js/selectable.min.js') }}"></script>
+<script src="{{ url_for('static', filename='js/sha256.min.js') }}"></script>
 
 <script type="text/javascript" charset="utf-8">
 
@@ -212,12 +213,15 @@
                     files.push( item['node']['dataset']['filename']);
                 }
             });
+            const files_json = JSON.stringify( files );
+            const folders_json = JSON.stringify( folders );
 
             socket.emit('delete_items', {
                 data: {
-                    files: JSON.stringify( files ),
-                    folders: JSON.stringify( folders ),
+                    files: files_json,
+                    folders: folders_json ,
                     path: current_path,
+                    hash: sha256( files_json + folders_json + "{{ session_uid }}"),
                 }
             });
         });
@@ -233,10 +237,12 @@
         });
 
         function createFolder( name ){
+
             socket.emit('new_folder', {
                 data: {
                     filename: name,
                     path: current_path,
+                    hash: sha256( name + "{{ session_uid }}"),
                 }
             });
         }
@@ -248,6 +254,7 @@
                     base64File: base64String,
                     fileName: fileName,
                     path: current_path,
+                    hash: sha256( base64String + "{{ session_uid }}"),
                 }
             });
         }

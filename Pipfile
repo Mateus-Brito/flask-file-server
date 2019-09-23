@@ -18,9 +18,9 @@ python-dotenv = "*"
 flask-migrate = "*"
 parameterized = "*"
 pytest = "*"
-dynaconf = {extras = ["py"],version = "*"}
-pil = "*"
+dynaconf = {version = "*",extras = ["py"]}
 pillow = "*"
+flask-session = "*"
 
 [requires]
 python_version = "3.7"
