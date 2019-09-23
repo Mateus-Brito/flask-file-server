@@ -85,7 +85,31 @@
 <script type="text/javascript" charset="utf-8">
 
     var current_path = "";
+    const my_private = 2 + parseInt(Math.random() * 49);
+    const my_public = (12**my_private)%13;
+    var shared;
 
+    function encrypt_message(message)
+    {
+        var decrypted_message = "";
+        key = shared;
+        for (var i=0; i<message.length; i++) {
+            var c = message.charCodeAt(i)+key;
+            decrypted_message += c;
+        }
+        return decrypted_message;
+    }
+    function decrypt_message(message)
+    {
+        var crypted_message = "";
+        key = shared;
+        for (var i=0; i<message.length(); i++) {
+            var c = message.charCodeAt(i)-key;
+            crypted_message += c;
+        }
+        return crypted_message;
+    }
+    
     var openFolder = function( name )
     {
         current_path = `/${name}`;
@@ -99,23 +123,23 @@
     }
 
     var loadFolderPath = function()
-        {
-            var basic = `<li onclick="openFolder('')">Meu Drive</li>`;
+    {
+        var basic = `<li onclick="openFolder('')">Meu Drive</li>`;
 
-            var all_pages = current_path.split("/");
-            all_pages.shift();
-            
-            var page = "";
-            all_pages.map(function(item, index){
+        var all_pages = current_path.split("/");
+        all_pages.shift();
+        
+        var page = "";
+        all_pages.map(function(item, index){
 
-                if( item.replace("/", "").length == 0) return;
+            if( item.replace("/", "").length == 0) return;
 
-                page += `${item}/`;
-                basic += `<li onclick="openFolder('${page}')">${item}</li>`;
-            });
+            page += `${item}/`;
+            basic += `<li onclick="openFolder('${page}')">${item}</li>`;
+        });
 
-            $("#folder_path").html( basic );
-        }
+        $("#folder_path").html( basic );
+    }
 
     var selected_items = [];
     
@@ -138,7 +162,11 @@
     selectable.on('end', updateCounter);
 
     socket.on('connect', function() {
-        socket.emit('join', {});
+        socket.emit('join', {'shared': my_public});
+    });
+
+    socket.on('shared', function( json ) {
+        shared = ( parseInt( json['shared'] ) ** my_private ) % 13;
     });
 
     socket.on('folder_added', function( json ) {
@@ -249,12 +277,13 @@
 
         function handlePictureDropUpload(base64String ,fileName)
         {
-            socket.emit('my event', {data: 
+            const encrypted_file = encrypt_message( base64String );
+            socket.emit('new_file', {data: 
                 {
-                    base64File: base64String,
+                    base64File: encrypted_file,
                     fileName: fileName,
                     path: current_path,
-                    hash: sha256( base64String + "{{ session_uid }}"),
+                    hash: sha256( encrypted_file + "{{ session_uid }}"),
                 }
             });
         }

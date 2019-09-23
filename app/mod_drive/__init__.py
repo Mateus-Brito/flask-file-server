@@ -9,6 +9,7 @@ from flask_login import current_user, login_required
 
 from app.views import authenticated_only
 from app.utils import createRootUser
+from app.mod_drive.keyexchange import encrypt_message, decrypt_message
 
 import sys
 import shutil
@@ -20,8 +21,10 @@ from PIL import Image
 from io import BytesIO
 import uuid
 import hashlib
+import secrets
 
 getHash256 = lambda text : hashlib.sha256( str(text).encode("UTF-8")).hexdigest()
+secretsGenerator = secrets.SystemRandom()
 
 mod_drive = Blueprint('drive', __name__,template_folder='templates')
 
@@ -37,12 +40,23 @@ def preventBackDir( path ):
 @login_required
 def index():
     session['uid'] = uuid.uuid4()
+    session['secret'] = secretsGenerator.randint(2,50)
+    session['public'] = (12 ** int(session['secret']) ) % 13
     return render_template('portal/index.html', session_uid=session['uid'])
 
 @socketio.on('join')
 def on_join(data):
     room = current_user.uuid
     join_room(room)
+
+    public_key = int( data['shared'] )
+    my_private_key = int( session['secret'] )
+
+    session['shared'] = ( public_key ** my_private_key ) % 13
+
+    emit('shared', {
+        'shared': session['public']
+    })
 
     emit('load_content', {
         'folders': getFolderList(''),
@@ -86,11 +100,12 @@ def deleteItems( json_obj ):
     removeFiles( files, json_obj['data']['path'])
     removeFolders( folders, json_obj['data']['path'])
 
-@socketio.on('my event')
+@socketio.on('new_file')
 @authenticated_only
 def handle_my_custom_event(json_obj):
 
-    hash = getHash256( json_obj['data']['base64File'] + str(session['uid']) )
+    decrypted_file = decrypt_message( json_obj['data']['base64File'] )
+    hash = getHash256( decrypted_file  + str(session['uid']) )
 
     if hash != json_obj['data']['hash']:
         #cancel
