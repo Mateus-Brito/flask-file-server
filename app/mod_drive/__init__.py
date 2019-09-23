@@ -1,4 +1,4 @@
-from flask import Blueprint, render_template, current_app
+from flask import Blueprint, render_template, current_app, session
 from app.socketio import socketio
 
 from flask_socketio import send, emit
@@ -18,6 +18,10 @@ import base64
 import json
 from PIL import Image
 from io import BytesIO
+import uuid
+import hashlib
+
+getHash256 = lambda text : hashlib.sha256( str(text).encode("UTF-8")).hexdigest()
 
 mod_drive = Blueprint('drive', __name__,template_folder='templates')
 
@@ -32,7 +36,8 @@ def preventBackDir( path ):
 @mod_drive.route('/')
 @login_required
 def index():
-    return render_template('portal/index.html')
+    session['uid'] = uuid.uuid4()
+    return render_template('portal/index.html', session_uid=session['uid'])
 
 @socketio.on('join')
 def on_join(data):
@@ -56,12 +61,25 @@ def changePage( json_obj ):
 @socketio.on('new_folder')
 @authenticated_only
 def makeFolder( json_obj ):
-    if 'filename' in json_obj['data']:
-        createFolder( json_obj['data']['filename'], json_obj['data']['path'])
+
+    hash = getHash256( json_obj['data']['filename'] + str(session['uid']) )
+
+    if hash != json_obj['data']['hash']:
+        #cancel
+        return
+
+    createFolder( json_obj['data']['filename'], json_obj['data']['path'])
 
 @socketio.on('delete_items')
 @authenticated_only
 def deleteItems( json_obj ):
+
+    hash = getHash256( str(json_obj['data']['files']) + str(json_obj['data']['folders']) + str(session['uid']) )
+
+    if hash != json_obj['data']['hash']:
+        #cancel
+        return
+
     files = json.loads( json_obj['data']['files'] )
     folders = json.loads( json_obj['data']['folders'] )
     
@@ -71,6 +89,12 @@ def deleteItems( json_obj ):
 @socketio.on('my event')
 @authenticated_only
 def handle_my_custom_event(json_obj):
+
+    hash = getHash256( json_obj['data']['base64File'] + str(session['uid']) )
+
+    if hash != json_obj['data']['hash']:
+        #cancel
+        return
 
     if 'fileName' in json_obj['data']:
         save_file( json_obj['data']['fileName'], json_obj['data']['base64File'], json_obj['data']['path'] )
@@ -114,6 +138,7 @@ def createFile( name ):
     }, room=current_user.uuid)
 
 def createFolder( name, path ):
+    createRootUser()
     
     name = secure_filename(name)
     path = preventBackDir( path )
