@@ -21,6 +21,14 @@ from io import BytesIO
 
 mod_drive = Blueprint('drive', __name__,template_folder='templates')
 
+def preventBackDir( path ):
+    path_modified = str(path).replace("/../", "")
+    path_modified  = re.sub(r'^../', "",path_modified)
+    path_modified  = re.sub(r'/..$', "",path_modified)
+    path_modified  = re.sub(r'^..$', "",path_modified)
+
+    return path_modified
+
 @mod_drive.route('/')
 @login_required
 def index():
@@ -32,8 +40,17 @@ def on_join(data):
     join_room(room)
 
     emit('load_content', {
-        'folders': getFolderList('.'),
-        'files': getFileList('.'),
+        'folders': getFolderList(''),
+        'files': getFileList(''),
+    })
+
+@socketio.on('change_page')
+def changePage( json_obj ):
+    path = preventBackDir( json_obj['data']['path'] )
+    
+    emit('load_content', {
+        'folders': getFolderList(path),
+        'files': getFileList(path),
     })
 
 @socketio.on('new_folder')
@@ -56,12 +73,12 @@ def deleteItems( json_obj ):
 def handle_my_custom_event(json_obj):
 
     if 'fileName' in json_obj['data']:
-        save_file( json_obj['data']['fileName'], json_obj['data']['base64File']  )
+        save_file( json_obj['data']['fileName'], json_obj['data']['base64File'], json_obj['data']['path'] )
 
-def save_file(filename, b64_string):
+def save_file(filename, b64_string, path):
     createRootUser()
-
-    path_file = current_app.config['DRIVE_FOLDER'] + f"{str(current_user.uuid)}/" + secure_filename( filename )
+    path = preventBackDir( path )
+    path_file = current_app.config['DRIVE_FOLDER'] + f"{str(current_user.uuid)}/{path}/" + secure_filename( filename )
 
     filename, file_extension = os.path.splitext( path_file )
     file_extension = str(file_extension).lower()
@@ -99,8 +116,9 @@ def createFile( name ):
 def createFolder( name, path ):
     
     name = secure_filename(name)
-    directory = current_app.config['DRIVE_FOLDER'] + f"{current_user.uuid}/{name}" 
-    print(directory, file=sys.stderr)
+    path = preventBackDir( path )
+    directory = current_app.config['DRIVE_FOLDER'] + f"{current_user.uuid}/{path}/{name}" 
+
     if not os.path.exists( directory ):
         os.makedirs(directory)
 
@@ -111,17 +129,17 @@ def createFolder( name, path ):
     }, room=current_user.uuid)
 
 def getFolderList( path ):
-    path = current_app.config['DRIVE_FOLDER'] + f"/{str(current_user.uuid)}/" + secure_filename( path )
+    path = current_app.config['DRIVE_FOLDER'] + f"/{str(current_user.uuid)}/" + preventBackDir( path )
 
     return [o for o in os.listdir(path) if os.path.isdir(os.path.join(path,o))]
 
 def getFileList( path ):
-    path = current_app.config['DRIVE_FOLDER'] + f"/{str(current_user.uuid)}/" + secure_filename( path )
+    path = current_app.config['DRIVE_FOLDER'] + f"/{str(current_user.uuid)}/" + preventBackDir( path )
 
     return [o for o in os.listdir(path) if not os.path.isdir(os.path.join(path,o))]
 
 def removeFiles( items, path):
-    path = current_app.config['DRIVE_FOLDER'] + f"/{str(current_user.uuid)}/" + secure_filename( path )
+    path = current_app.config['DRIVE_FOLDER'] + f"/{str(current_user.uuid)}/" + preventBackDir( path )
 
     for item in items:
         file_path = f"{path}/{item}"
@@ -135,11 +153,11 @@ def removeFiles( items, path):
     }, room=current_user.uuid)
     
 def removeFolders( items, path):
-    path = current_app.config['DRIVE_FOLDER'] + f"/{str(current_user.uuid)}/" + secure_filename( path )
+    path = current_app.config['DRIVE_FOLDER'] + f"/{str(current_user.uuid)}/" + preventBackDir( path )
 
     for item in items:
         file_path = f"{path}/{item}"
-        print( file_path, file=sys.stderr)
+        
         if os.path.isdir( file_path ):
             shutil.rmtree(file_path, ignore_errors=True)
 

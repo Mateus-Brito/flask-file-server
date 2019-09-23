@@ -1,4 +1,5 @@
 from flask import Flask, jsonify, redirect, url_for
+import os
 
 from flask_login import LoginManager
 from dynaconf import FlaskDynaconf
@@ -26,6 +27,7 @@ def create_app():
     app.url_map.strict_slashes = False
 
     FlaskDynaconf(app)
+    createDefaultConfig( app )
 
     db.init_app(app)
     csrf.init_app(app)
@@ -60,3 +62,8 @@ def create_app():
         return redirect(url_for("file_server.login"))
 
     return app
+
+def createDefaultConfig( current_app ):
+    directory = current_app.config['DRIVE_FOLDER']
+    if not os.path.exists( directory ):
+        os.makedirs(directory)

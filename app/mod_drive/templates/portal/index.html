@@ -18,6 +18,11 @@
         <a id="delete-btn" class="btn"><i class="material-icons left">delete</i> <span>Deletar</span></a>
     </div>
 </div>
+<div class="col m12">
+    <ul id="folder_path">
+        
+    </ul>
+</div>
 <div class="col m12"> 
     <form action="/file-upload" id="drive_content">
         <h3>Pastas</h3>
@@ -50,7 +55,7 @@
 <script src="//cdnjs.cloudflare.com/ajax/libs/socket.io/2.2.0/socket.io.js" integrity="sha256-yr4fRk/GU1ehYJPAs8P4JlTgu0Hdsp4ZKrx8bDEDC3I=" crossorigin="anonymous"></script>
 
 <script type="text/html" id="folder">
-    <div class="folder" data-folder=${name}>
+    <div ondblclick="openFolder('${path}')" class="folder" data-folder=${name}>
         <div>
             <img src="{{url_for('static', filename='img/icons/folder.png')}}" />
         </div>
@@ -79,6 +84,38 @@
 <script type="text/javascript" charset="utf-8">
 
     var current_path = "";
+
+    var openFolder = function( name )
+    {
+        current_path = `/${name}`;
+        socket.emit('change_page', {
+            'data':{
+                'path': name
+            }
+        });
+        loadFolderPath();
+
+    }
+
+    var loadFolderPath = function()
+        {
+            var basic = `<li onclick="openFolder('')">Meu Drive</li>`;
+
+            var all_pages = current_path.split("/");
+            all_pages.shift();
+            
+            var page = "";
+            all_pages.map(function(item, index){
+
+                if( item.replace("/", "").length == 0) return;
+
+                page += `${item}/`;
+                basic += `<li onclick="openFolder('${page}')">${item}</li>`;
+            });
+
+            $("#folder_path").html( basic );
+        }
+
     var selected_items = [];
     
     var socket = io();
@@ -104,7 +141,11 @@
     });
 
     socket.on('folder_added', function( json ) {
-        $("#folder").tmpl({name: json['data']['name']}).appendTo("#folder_content");
+        $("#folder").tmpl({
+            name: json['data']['name'],
+            path: current_path+json['data']['name'],
+            }
+        ).appendTo("#folder_content");
 
         var folder = document.querySelectorAll(`.folder[data-folder="${json['data']['name']}"]`);
         selectable.add( folder );
@@ -137,7 +178,10 @@
         {
             json['folders'].map(function(item, index)
             {
-                $("#folder").tmpl({name: item}).appendTo("#folder_content");
+                $("#folder").tmpl({
+                    name: item,
+                    path: current_path+`/${item}`,
+                    }).appendTo("#folder_content");
             });
 
             json['files'].map(function(item, index)
@@ -151,6 +195,8 @@
     });
 
     $(document).ready(function(e){
+
+        loadFolderPath();
 
         $('#delete-btn').on('click',function(e){
             
@@ -180,13 +226,13 @@
 
             var filename = $("#folder_name").val();
 
-            craateFolder( filename );
+            createFolder( filename );
 
             $('#new_folder').modal('close');
 
         });
 
-        function craateFolder( name ){
+        function createFolder( name ){
             socket.emit('new_folder', {
                 data: {
                     filename: name,
@@ -200,7 +246,8 @@
             socket.emit('my event', {data: 
                 {
                     base64File: base64String,
-                    fileName: fileName
+                    fileName: fileName,
+                    path: current_path,
                 }
             });
         }
