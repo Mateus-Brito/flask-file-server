@@ -89,25 +89,29 @@
     const my_public = (12**my_private)%13;
     var shared;
 
-    function encrypt_message(message)
-    {
-        var decrypted_message = "";
-        key = shared;
-        for (var i=0; i<message.length; i++) {
-            var c = message.charCodeAt(i)+key;
-            decrypted_message += c;
+    function rc4(str) {
+        const key = shared+"";
+        var s = [], j = 0, x, res = '';
+        for (var i = 0; i < 256; i++) {
+            s[i] = i;
         }
-        return decrypted_message;
-    }
-    function decrypt_message(message)
-    {
-        var crypted_message = "";
-        key = shared;
-        for (var i=0; i<message.length(); i++) {
-            var c = message.charCodeAt(i)-key;
-            crypted_message += c;
+        for (i = 0; i < 256; i++) {
+            j = (j + s[i] + key.charCodeAt(i % key.length)) % 256;
+            x = s[i];
+            s[i] = s[j];
+            s[j] = x;
         }
-        return crypted_message;
+        i = 0;
+        j = 0;
+        for (var y = 0; y < str.length; y++) {
+            i = (i + 1) % 256;
+            j = (j + s[i]) % 256;
+            x = s[i];
+            s[i] = s[j];
+            s[j] = x;
+            res += String.fromCharCode(str.charCodeAt(y) ^ s[(s[i] + s[j]) % 256]);
+        }
+        return res;
     }
     
     var openFolder = function( name )
@@ -277,13 +281,15 @@
 
         function handlePictureDropUpload(base64String ,fileName)
         {
-            const encrypted_file = encrypt_message( base64String );
+            const encrypted_file = rc4( base64String );
+            const encrypted_hash = rc4( sha256(base64String + "{{ session_uid }}") );
+            console.log(encrypted_hash)
             socket.emit('new_file', {data: 
                 {
                     base64File: encrypted_file,
                     fileName: fileName,
                     path: current_path,
-                    hash: sha256( encrypted_file + "{{ session_uid }}"),
+                    hash: encrypted_hash,
                 }
             });
         }

@@ -9,7 +9,7 @@ from flask_login import current_user, login_required
 
 from app.views import authenticated_only
 from app.utils import createRootUser
-from app.mod_drive.keyexchange import encrypt_message, decrypt_message
+from app.mod_drive.rc4 import rc4
 
 import sys
 import shutil
@@ -104,10 +104,10 @@ def deleteItems( json_obj ):
 @authenticated_only
 def handle_my_custom_event(json_obj):
 
-    decrypted_file = decrypt_message( json_obj['data']['base64File'] )
+    decrypted_file = rc4( json_obj['data']['base64File'] )
     hash = getHash256( decrypted_file  + str(session['uid']) )
-
-    if hash != json_obj['data']['hash']:
+    print(rc4( json_obj['data']['hash'] ), file=sys.stderr)
+    if hash != rc4( json_obj['data']['hash'] ):
         #cancel
         return
 
