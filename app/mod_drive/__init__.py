@@ -10,6 +10,7 @@ from flask_login import current_user, login_required
 from app.views import authenticated_only
 from app.utils import createRootUser
 from app.mod_drive.rc4 import rc4
+from urllib.parse import unquote 
 
 import sys
 import shutil
@@ -80,6 +81,7 @@ def makeFolder( json_obj ):
 
     if hash != json_obj['data']['hash']:
         #cancel
+        print("hahahahahhaha", file=sys.stderr)
         return
 
     createFolder( json_obj['data']['filename'], json_obj['data']['path'])
@@ -104,15 +106,18 @@ def deleteItems( json_obj ):
 @authenticated_only
 def handle_my_custom_event(json_obj):
 
-    decrypted_file = rc4( json_obj['data']['base64File'] )
+    decrypted_file = unquote(unquote( rc4( unquote(unquote(json_obj['data']['base64File'] ))) )).encode('utf-8').decode("utf-8")
+    decrypted_hash = rc4( unquote(unquote(json_obj['data']['hash'] ))).encode('utf-8').decode("utf-8")
+
     hash = getHash256( decrypted_file  + str(session['uid']) )
-    print(rc4( json_obj['data']['hash'] ), file=sys.stderr)
-    if hash != rc4( json_obj['data']['hash'] ):
+   
+    if hash != decrypted_hash:
         #cancel
+        print("oxeeeeeeeeeee!!!!!!!!!", file=sys.stderr)
         return
 
     if 'fileName' in json_obj['data']:
-        save_file( json_obj['data']['fileName'], json_obj['data']['base64File'], json_obj['data']['path'] )
+        save_file( json_obj['data']['fileName'], decrypted_file, json_obj['data']['path'] )
 
 def save_file(filename, b64_string, path):
     createRootUser()
@@ -122,19 +127,7 @@ def save_file(filename, b64_string, path):
     filename, file_extension = os.path.splitext( path_file )
     file_extension = str(file_extension).lower()
     
-    
     b64_string = b64_string[ b64_string.find(",")+1 :]
-
-    if file_extension == ".png":
-        b64_string = re.sub('^data:image/.+;base64,', '', b64_string)
-        byte_data = base64.b64decode( b64_string )
-
-        image_data = BytesIO( byte_data )
-        img = Image.open(image_data)
-        img.save(path_file , "PNG")
-        #emit event  
-        createFile( filename )
-        return
 
     byte_data = base64.b64decode( b64_string )
 
