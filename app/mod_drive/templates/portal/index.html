@@ -84,11 +84,42 @@
 
 <script type="text/javascript" charset="utf-8">
 
-    var current_path = "";
 
+    var current_path = "";
+    const my_private = 2 + parseInt(Math.random() * 49);
+    const my_public = (12**my_private)%13;
+    var shared;
+
+    function rc4(str) {
+
+        const key = shared+"";
+        var s = [], j = 0, x, res = '';
+        for (var i = 0; i < 256; i++) {
+            s[i] = i;
+        }
+        for (i = 0; i < 256; i++) {
+            j = (j + s[i] + key.charCodeAt(i % key.length)) % 256;
+            x = s[i];
+            s[i] = s[j];
+            s[j] = x;
+        }
+        i = 0;
+        j = 0;
+        for (var y = 0; y < str.length; y++) {
+            i = (i + 1) % 256;
+            j = (j + s[i]) % 256;
+            x = s[i];
+            s[i] = s[j];
+            s[j] = x;
+            res += String.fromCharCode(str.charCodeAt(y) ^ s[(s[i] + s[j]) % 256]);
+        }
+        return res;
+    }
+    
     var openFolder = function( name )
     {
         current_path = `/${name}`;
+        console.log( current_path );
         socket.emit('change_page', {
             'data':{
                 'path': name
@@ -99,23 +130,23 @@
     }
 
     var loadFolderPath = function()
-        {
-            var basic = `<li onclick="openFolder('')">Meu Drive</li>`;
+    {
+        var basic = `<li onclick="openFolder('')">Meu Drive</li>`;
 
-            var all_pages = current_path.split("/");
-            all_pages.shift();
-            
-            var page = "";
-            all_pages.map(function(item, index){
+        var all_pages = current_path.split("/");
+        all_pages.shift();
+        
+        var page = "";
+        all_pages.map(function(item, index){
 
-                if( item.replace("/", "").length == 0) return;
+            if( item.replace("/", "").length == 0) return;
 
-                page += `${item}/`;
-                basic += `<li onclick="openFolder('${page}')">${item}</li>`;
-            });
+            page += `${item}/`;
+            basic += `<li onclick="openFolder('${page}')">${item}</li>`;
+        });
 
-            $("#folder_path").html( basic );
-        }
+        $("#folder_path").html( basic );
+    }
 
     var selected_items = [];
     
@@ -138,13 +169,17 @@
     selectable.on('end', updateCounter);
 
     socket.on('connect', function() {
-        socket.emit('join', {});
+        socket.emit('join', {'shared': my_public});
+    });
+
+    socket.on('shared', function( json ) {
+        shared = ( parseInt( json['shared'] ) ** my_private ) % 13;
     });
 
     socket.on('folder_added', function( json ) {
         $("#folder").tmpl({
             name: json['data']['name'],
-            path: current_path+json['data']['name'],
+            path: current_path+"/"+json['data']['name'],
             }
         ).appendTo("#folder_content");
 
@@ -249,12 +284,16 @@
 
         function handlePictureDropUpload(base64String ,fileName)
         {
-            socket.emit('my event', {data: 
+            const encrypted_file = encodeURIComponent( rc4( encodeURIComponent( base64String ) ) );
+            const encrypted_hash = encodeURIComponent(rc4( sha256(base64String + "{{ session_uid }}") ));
+                console.log( base64String );
+        
+            socket.emit('new_file', {data: 
                 {
-                    base64File: base64String,
+                    base64File: encrypted_file,
                     fileName: fileName,
                     path: current_path,
-                    hash: sha256( base64String + "{{ session_uid }}"),
+                    hash: encrypted_hash,
                 }
             });
         }

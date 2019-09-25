@@ -9,6 +9,8 @@ from flask_login import current_user, login_required
 
 from app.views import authenticated_only
 from app.utils import createRootUser
+from app.mod_drive.rc4 import rc4
+from urllib.parse import unquote 
 
 import sys
 import shutil
@@ -20,8 +22,10 @@ from PIL import Image
 from io import BytesIO
 import uuid
 import hashlib
+import secrets
 
 getHash256 = lambda text : hashlib.sha256( str(text).encode("UTF-8")).hexdigest()
+secretsGenerator = secrets.SystemRandom()
 
 mod_drive = Blueprint('drive', __name__,template_folder='templates')
 
@@ -37,12 +41,23 @@ def preventBackDir( path ):
 @login_required
 def index():
     session['uid'] = uuid.uuid4()
+    session['secret'] = secretsGenerator.randint(2,50)
+    session['public'] = (12 ** int(session['secret']) ) % 13
     return render_template('portal/index.html', session_uid=session['uid'])
 
 @socketio.on('join')
 def on_join(data):
     room = current_user.uuid
     join_room(room)
+
+    public_key = int( data['shared'] )
+    my_private_key = int( session['secret'] )
+
+    session['shared'] = ( public_key ** my_private_key ) % 13
+
+    emit('shared', {
+        'shared': session['public']
+    })
 
     emit('load_content', {
         'folders': getFolderList(''),
@@ -66,6 +81,7 @@ def makeFolder( json_obj ):
 
     if hash != json_obj['data']['hash']:
         #cancel
+        print("hahahahahhaha", file=sys.stderr)
         return
 
     createFolder( json_obj['data']['filename'], json_obj['data']['path'])
@@ -86,18 +102,22 @@ def deleteItems( json_obj ):
     removeFiles( files, json_obj['data']['path'])
     removeFolders( folders, json_obj['data']['path'])
 
-@socketio.on('my event')
+@socketio.on('new_file')
 @authenticated_only
 def handle_my_custom_event(json_obj):
 
-    hash = getHash256( json_obj['data']['base64File'] + str(session['uid']) )
+    decrypted_file = unquote(unquote( rc4( unquote(unquote(json_obj['data']['base64File'] ))) )).encode('utf-8').decode("utf-8")
+    decrypted_hash = rc4( unquote(unquote(json_obj['data']['hash'] ))).encode('utf-8').decode("utf-8")
 
-    if hash != json_obj['data']['hash']:
+    hash = getHash256( decrypted_file  + str(session['uid']) )
+   
+    if hash != decrypted_hash:
         #cancel
+        print("oxeeeeeeeeeee!!!!!!!!!", file=sys.stderr)
         return
 
     if 'fileName' in json_obj['data']:
-        save_file( json_obj['data']['fileName'], json_obj['data']['base64File'], json_obj['data']['path'] )
+        save_file( json_obj['data']['fileName'], decrypted_file, json_obj['data']['path'] )
 
 def save_file(filename, b64_string, path):
     createRootUser()
@@ -107,19 +127,7 @@ def save_file(filename, b64_string, path):
     filename, file_extension = os.path.splitext( path_file )
     file_extension = str(file_extension).lower()
     
-    
     b64_string = b64_string[ b64_string.find(",")+1 :]
-
-    if file_extension == ".png":
-        b64_string = re.sub('^data:image/.+;base64,', '', b64_string)
-        byte_data = base64.b64decode( b64_string )
-
-        image_data = BytesIO( byte_data )
-        img = Image.open(image_data)
-        img.save(path_file , "PNG")
-        #emit event  
-        createFile( filename )
-        return
 
     byte_data = base64.b64decode( b64_string )
 
