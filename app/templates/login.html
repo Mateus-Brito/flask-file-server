@@ -41,13 +41,22 @@
                     var formData = new FormData($(this)[0]);
                     $.ajax({
                         type: "post",
-                        url: "{{ url_for('file_server.login')}}",
+                        crossDomain: true,
+                        url: "{{ config['CDC_SERVER'] }}/login",
                         data: formData,
                         processData: false,
                         contentType: false,
                         success: function(result){
                             window.location.href = "/drive/";
-                        }});
+                        },
+                        error: function(xhr, status, error) {
+                            console.log("readyState: " + xhr.readyState);
+    console.log("responseText: "+ xhr.responseText);
+    console.log("status: " + xhr.status);
+    console.log("text status: " + textStatus);
+    console.log("error: " + err);
+                        }
+                    });
                     
                 });
 

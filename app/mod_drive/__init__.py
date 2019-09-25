@@ -41,23 +41,12 @@ def preventBackDir( path ):
 @login_required
 def index():
     session['uid'] = uuid.uuid4()
-    session['secret'] = secretsGenerator.randint(2,50)
-    session['public'] = (12 ** int(session['secret']) ) % 13
     return render_template('portal/index.html', session_uid=session['uid'])
 
 @socketio.on('join')
 def on_join(data):
     room = current_user.uuid
     join_room(room)
-
-    public_key = int( data['shared'] )
-    my_private_key = int( session['secret'] )
-
-    session['shared'] = ( public_key ** my_private_key ) % 13
-
-    emit('shared', {
-        'shared': session['public']
-    })
 
     emit('load_content', {
         'folders': getFolderList(''),

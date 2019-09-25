@@ -1,4 +1,4 @@
-from flask import Blueprint, render_template, redirect, url_for, request, jsonify, current_app
+from flask import Blueprint, render_template, redirect, url_for, request, jsonify, current_app, session
 
 from flask_login import current_user
 from flask_socketio import disconnect
@@ -43,17 +43,6 @@ def login():
         return redirect(url_for("drive.index"))
 
     form = Login(request.form)
-
-    if request.method == 'POST' and form.validate():
-
-        response, code = loginUser( form.email.data, form.password.data )
-
-        return jsonify( response ), code
-
-    if form.errors :
-        for fieldName, errorMessages in form.errors.items():
-            for err in errorMessages:
-                return jsonify({'message': str(err), 'id': fieldName}), 400
 
     return render_template("login.html", form=form)
 
