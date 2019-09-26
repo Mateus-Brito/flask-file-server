@@ -1,5 +1,16 @@
 from flask import Blueprint, render_template, current_app, session, request
 from app.socketio import socketio
+import sys
+import shutil
+import os
+import re
+import base64
+import json
+from PIL import Image
+from io import BytesIO
+import uuid
+import hashlib
+import secrets
 
 from flask_socketio import send, emit
 from flask_socketio import join_room, leave_room
@@ -12,18 +23,6 @@ from app.utils import createRootUser
 from app.mod_drive.rc4 import rc4
 from urllib.parse import unquote 
 
-
-import sys
-import shutil
-import os
-import re
-import base64
-import json
-from PIL import Image
-from io import BytesIO
-import uuid
-import hashlib
-import secrets
 from flask_jwt_extended import (
     JWTManager, jwt_required, create_access_token,
     get_jwt_identity
@@ -48,6 +47,7 @@ def index():
     return render_template('portal/index.html', session_uid=session['uid'])
 
 @socketio.on('join')
+@jwt_required
 def on_join(json_obj):
 
     uuid_user = json_obj['uuid']
@@ -62,8 +62,9 @@ def on_join(json_obj):
     })
 
 @socketio.on('change_page')
+@jwt_required
 def changePage( json_obj ):
-    uuid_user = json_obj['uuid']
+    uuid_user = json_obj['data']['uuid']
     path = preventBackDir( json_obj['data']['path'] )
     
     emit('load_content', {
@@ -72,6 +73,7 @@ def changePage( json_obj ):
     })
 
 @socketio.on('new_folder')
+@jwt_required
 def makeFolder( json_obj ):
 
     uuid_user = json_obj['data']['uuid']
@@ -86,27 +88,34 @@ def makeFolder( json_obj ):
     createFolder( uuid_user, token_user, json_obj['data']['filename'], json_obj['data']['path'])
 
 @socketio.on('delete_items')
-@authenticated_only
+@jwt_required
 def deleteItems( json_obj ):
 
+    uuid_user = json_obj['data']['uuid']
+    token_user = json_obj['data']['token']
     hash = getHash256( str(json_obj['data']['files']) + str(json_obj['data']['folders']) + str(session['uid']) )
 
     if hash != json_obj['data']['hash']:
         #cancel
+        print("ops, hash errado!", file=sys.stderr)
         return
 
     files = json.loads( json_obj['data']['files'] )
     folders = json.loads( json_obj['data']['folders'] )
     
-    removeFiles( files, json_obj['data']['path'])
-    removeFolders( folders, json_obj['data']['path'])
+    removeFiles( token_user, uuid_user, files, json_obj['data']['path'])
+    removeFolders( token_user, uuid_user, folders, json_obj['data']['path'])
 
 @socketio.on('new_file')
-@authenticated_only
+@jwt_required
 def handle_my_custom_event(json_obj):
 
-    decrypted_file = unquote(unquote( rc4( unquote(unquote(json_obj['data']['base64File'] ))) )).encode('utf-8').decode("utf-8")
-    decrypted_hash = rc4( unquote(unquote(json_obj['data']['hash'] ))).encode('utf-8').decode("utf-8")
+    token_user = json_obj['data']['token']
+    uuid_user = json_obj['data']['uuid']
+    key = rc4( json_obj['data']['shared'], current_app.config['secret_key'] )
+
+    decrypted_file = rc4( json_obj['data']['base64File'], key)
+    decrypted_hash = rc4( json_obj['data']['hash'], key)
 
     hash = getHash256( decrypted_file  + str(session['uid']) )
    
@@ -116,10 +125,10 @@ def handle_my_custom_event(json_obj):
         return
 
     if 'fileName' in json_obj['data']:
-        save_file( json_obj['data']['fileName'], decrypted_file, json_obj['data']['path'] )
+        save_file( uuid_user, token_user, json_obj['data']['fileName'], decrypted_file, json_obj['data']['path'] )
 
-def save_file(uuid_user, filename, b64_string, path):
-    createRootUser()
+def save_file(uuid_user, token_user, filename, b64_string, path):
+    createRootUser( uuid_user )
     path = preventBackDir( path )
     path_file = current_app.config['DRIVE_FOLDER'] + f"{str(uuid_user)}/{path}/" + secure_filename( filename )
 
@@ -133,16 +142,15 @@ def save_file(uuid_user, filename, b64_string, path):
     with open(path_file, "wb") as f:
         f.write( byte_data )
 
-    #emit event    
-    createFile( filename )
+    createFile( token_user, filename )
     
-def createFile( uuid_user, name ):
+def createFile( token_user, name ):
     name = os.path.basename( name )
     emit('file_added', {
         'data': {
             'name': name,
         }
-    }, room=uuid_user)
+    }, room=token_user)
 
 def createFolder( uuid_user, token_user, name, path ):
     
@@ -171,7 +179,7 @@ def getFileList( uuid_user, path ):
 
     return [o for o in os.listdir(path) if not os.path.isdir(os.path.join(path,o))]
 
-def removeFiles( uuid_user, items, path):
+def removeFiles( token_user, uuid_user, items, path):
     path = current_app.config['DRIVE_FOLDER'] + f"/{str(uuid_user)}/" + preventBackDir( path )
 
     for item in items:
@@ -183,9 +191,9 @@ def removeFiles( uuid_user, items, path):
         'data': {
             'files': json.dumps( items ),
         }
-    }, room=uuid_user)
+    }, room=token_user)
     
-def removeFolders( uuid_user, items, path):
+def removeFolders( token_user, uuid_user, items, path):
     path = current_app.config['DRIVE_FOLDER'] + f"/{str(uuid_user)}/" + preventBackDir( path )
 
     for item in items:
@@ -198,4 +206,4 @@ def removeFolders( uuid_user, items, path):
         'data': {
             'folders': json.dumps( items ),
         }
-    }, room=uuid_user)
+    }, room=token_user)

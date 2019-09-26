@@ -45,16 +45,18 @@
                     $.ajax({
                         type: "post",
                         crossDomain: true,
-                        url: "{{ config['CDC_SERVER'] }}/register",
                         data: formData,
+                        url: "{{ config['CDC_SERVER'] }}/register",
                         processData: false,
                         contentType: false,
                         success: function(result){
-                            window.location.href = "/drive/";
-                        }});
-                    
-                });
+                            console.log( result );
+                            localStorage.setItem('user', JSON.stringify(result));
 
+                            window.location.href = "/drive/";
+                        }
+                    });
+                });
             });
         </script>
     </body>

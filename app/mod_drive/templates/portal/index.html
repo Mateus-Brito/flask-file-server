@@ -119,9 +119,10 @@
     var openFolder = function( name )
     {
         current_path = `/${name}`;
-        console.log( current_path );
+     
         socket.emit('change_page', {
             'data':{
+                'uuid': user.uuid,
                 'path': name
             }
         });
@@ -149,8 +150,19 @@
     }
 
     var selected_items = [];
-    
-    var socket = io();
+    const authorization = "Bearer "+user.token;
+
+    var socket = io(
+    {
+        transportOptions: {
+            polling: {
+            extraHeaders: {
+                'Authorization': authorization,
+            },
+            },
+        },
+    }
+    );
     const selectable = new Selectable({ignore: ".custom-menu"});
 
     const updateCounter = (e, selected, unselected) => {
@@ -253,6 +265,8 @@
 
             socket.emit('delete_items', {
                 data: {
+                    token: user.token,
+                    uuid: user.uuid,
                     files: files_json,
                     folders: folders_json ,
                     path: current_path,
@@ -287,12 +301,14 @@
 
         function handlePictureDropUpload(base64String ,fileName)
         {
-            const encrypted_file = encodeURIComponent( rc4( encodeURIComponent( base64String ) ) );
-            const encrypted_hash = encodeURIComponent(rc4( sha256(base64String + "{{ session_uid }}") ));
-                console.log( base64String );
-        
+            const encrypted_file = rc4( base64String );
+            const encrypted_hash = rc4( sha256(base64String + "{{ session_uid }}") );
+
             socket.emit('new_file', {data: 
                 {
+                    token: user.token,
+                    uuid: user.uuid,
+                    shared: user.shared_public,
                     base64File: encrypted_file,
                     fileName: fileName,
                     path: current_path,
