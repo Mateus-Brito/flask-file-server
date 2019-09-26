@@ -1,0 +1,59 @@
+nav{
+    background-color: #21252D;
+
+    height: 50px;
+    line-height: 50px;
+}
+.collection-item
+{
+    color: #000 !important;
+}
+
+.ui-selected{
+    background: #c6c0c0d4;
+}
+
+.ui-selecting{
+    background: #c6c0c08a;
+}
+.custom-menu > p{
+    text-align: center;
+}
+.file,.folder{
+    overflow: hidden;
+    text-align: center;
+    width: 120px;
+}
+.folder img, .file img{
+    width: 90%;
+    height: auto;
+}
+.collection .collection-item.active
+{
+    background: #21252D;
+    color: #fff !important;
+}
+h3{
+    font-size: 18px;
+    font-weight: bold;
+}
+.modal-content{
+    padding: 0 24px !important;
+}
+
+#dropdown-user{
+    top: 50px !important;
+}
+
+#dropdown-button{
+    top: 95px !important;
+}
+
+.container-fluid{
+    padding-top: 9px;
+}
+
+.btn{
+    color: #000 !important;
+    background: #fff !important;
+}

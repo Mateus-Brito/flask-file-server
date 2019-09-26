@@ -1,0 +1,16 @@
+#drive_content
+{
+    width: 100%;
+    height: calc(100vh - 80px);
+}
+
+#folder_content > div, #file_content > div{
+    display: inline-block;
+    margin: 10px 5px;
+    word-break: keep-all;
+}
+
+#folder_path li{
+    display: inline-block;
+    padding: 0 15px;
+}

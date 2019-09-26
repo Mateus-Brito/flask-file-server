@@ -1,0 +1,75 @@
+<html>
+    <head>
+
+        <link rel="stylesheet" type="text/css" href="{{ url_for('static', filename='css/materialize.min.css') }}">
+        <link rel="stylesheet" type="text/css" href="{{ url_for('static', filename='css/drive.css') }}">
+
+        {% block styles %}{% endblock %}
+
+        <meta name="csrf-token" content="{{ csrf_token() }}">
+        
+        <title>BMW Cloud</title>
+
+    </head>
+    <body> 
+        <nav>
+            <div class="nav-wrapper custom-menu">
+                <a href="#" class="brand-logo"><span style="color: yellow;">BMW</span> Cloud</a>
+                <ul id="nav-mobile" class="right hide-on-med-and-down">
+                    <li><a id="username_button" class='dropdown-trigger' href='#' data-target='dropdown-user'>ab</a></li>
+                    <ul id='dropdown-user' class='dropdown-content'>
+                      <li class="divider" tabindex="-1"></li>
+                      <li><a onclick="logout()">sair</a></li>
+                    </ul>
+                </ul>
+            </div>
+        </nav>
+        <div class="container-fluid">
+            <div class="row">
+                <div class="col m2 custom-menu" style="padding: 0">
+                    <p>Drive</p>
+                    <div class="collection">
+                        <a href="#!" class="collection-item">Arquivos</a>
+                        <a href="#!" class="collection-item active">Recentes</a>
+                        <a href="#!" class="collection-item">Compartilhado</a>
+                        <a href="#!" class="collection-item">Explorar</a>
+                      </div>
+                            
+                </div>
+                <div class="col s9 content">
+                    {% block content %}{% endblock %}
+                </div>
+            </div>
+        </div>
+        <script src="{{ url_for('static', filename='js/jquery-3.4.1.min.js') }}"></script>
+        <script src="{{ url_for('static', filename='js/materialize.min.js') }}"></script>
+
+        <script>
+            const shared_key = "";
+
+            var user = JSON.parse(localStorage.getItem('user'));
+            if( !user )
+            {
+                window.location = "/login";
+            }
+
+            function logout() {
+                // remove user from local storage to log user out
+                localStorage.removeItem('user');
+                window.location = "/login";
+            }
+
+        </script>
+        {% block after_jquery %} {% endblock %}
+        <script>
+            
+            $(document).ready(function(e){
+                $('.dropdown-trigger').dropdown();
+                $('.modal').modal();
+
+                $('#username_button').html( user['username'] );
+
+            });
+        </script>
+    </body>
+</html>

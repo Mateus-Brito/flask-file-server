@@ -1,0 +1,27 @@
+[[source]]
+name = "pypi"
+url = "https://pypi.org/simple"
+verify_ssl = true
+
+[dev-packages]
+
+[packages]
+flask = "*"
+flask-login = "*"
+flask-socketio = "*"
+eventlet = "*"
+gunicorn = "*"
+wtforms = "*"
+flask-wtf = "*"
+flask-sqlalchemy = "*"
+python-dotenv = "*"
+flask-migrate = "*"
+parameterized = "*"
+pytest = "*"
+dynaconf = {version = "*",extras = ["py"]}
+pillow = "*"
+flask-session = "*"
+flask-jwt-extended = "*"
+
+[requires]
+python_version = "3.7"

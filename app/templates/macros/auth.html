@@ -1,0 +1,30 @@
+{% macro ajaxSetup(field_id) %}
+<script>
+    var csrftoken = $('meta[name=csrf-token]').attr('content');
+
+    $.ajaxSetup({
+        beforeSend: function(xhr, settings) {
+            if (!/^(GET|HEAD|OPTIONS|TRACE)$/i.test(settings.type) && !this.crossDomain) {
+                xhr.setRequestHeader("X-CSRFToken", csrftoken)
+            }
+        },
+        error: function(jqXHR, exception) {
+            if (jqXHR.status === 0) {
+                
+            } else if (jqXHR.status == 404) {
+                
+            } else if (jqXHR.status == 500) {
+                
+            } else if (exception === 'parsererror') {
+                
+            } else if (exception === 'timeout') {
+                
+            } else if (exception === 'abort') {
+                
+            } else {
+                $('#{{field_id}}').html(JSON.parse(jqXHR.responseText).message);
+            }
+        }
+    })
+</script>
+{% endmacro %}
