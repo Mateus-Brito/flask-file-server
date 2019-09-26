@@ -53,6 +53,10 @@ def create_app():
 
     socketio.init_app(app)
     
+    @login_manager.user_loader
+    def load_user(user_id):
+        return User.query.get(user_id)
+        
     @app.before_request
     def set_domain_session():
         session['domain'] = request.headers['Host']

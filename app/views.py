@@ -38,9 +38,6 @@ def logout():
 @file_server.route('/login', methods=['GET'])
 def login():
     
-    if current_user.is_authenticated:
-        return redirect(url_for("drive.index"))
-
     form = Login(request.form)
 
     return render_template("login.html", form=form)
