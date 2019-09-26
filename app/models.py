@@ -21,5 +21,12 @@ class User(db.Model):
     def get_id(self):
         return self.id
 
+    def as_dict(self):
+        return {
+            'email': self.email,
+            'first_name': self.first_name,
+            'last_name': self.last_name,
+        }
+        
     def __repr__(self):
         return '<User>'

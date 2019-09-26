@@ -44,7 +44,8 @@
                     var formData = new FormData($(this)[0]);
                     $.ajax({
                         type: "post",
-                        url: "{{ url_for('file_server.register')}}",
+                        crossDomain: true,
+                        url: "{{ config['CDC_SERVER'] }}/register",
                         data: formData,
                         processData: false,
                         contentType: false,

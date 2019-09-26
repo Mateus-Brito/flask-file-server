@@ -2,9 +2,8 @@
 from flask import session
 import sys
 
-def rc4(data):
+def rc4(data, key):
     data = data.encode('utf-8').decode("utf-8")
-    key = str( session['shared'])
     S = list(range(256))
     j = 0
 

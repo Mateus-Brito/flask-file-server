@@ -1,4 +1,4 @@
-from flask import Flask, jsonify, redirect, url_for
+from flask import Flask, jsonify, redirect, url_for, _request_ctx_stack, request, session
 import os
 
 from flask_login import LoginManager
@@ -7,6 +7,7 @@ from app.socketio import socketio
 
 from flask_migrate import Migrate
 from flask_wtf.csrf import CSRFError
+from .JWTManager import jwt
 
 from app.views import file_server
 from .mod_drive import mod_drive
@@ -23,19 +24,22 @@ load_dotenv()
 def create_app():
 
     app = Flask(__name__, static_folder='static')
+    app.config['JWT_SECRET_KEY'] = 'super-secret'
     app.config['SQLALCHEMY_TRACK_MODIFICATIONS'] = False
     app.url_map.strict_slashes = False
 
     FlaskDynaconf(app)
     createDefaultConfig( app )
-
+    
     db.init_app(app)
     csrf.init_app(app)
+    jwt.init_app(app)
     migrate = Migrate(app, db)
 
     login_manager = LoginManager()
     login_manager.init_app(app)
     login_manager.session_protection = "strong"
+    login_serializer = URLSafeTimedSerializer(app.secret_key)
 
     login_manager.login_view = "user"
     login_manager.refresh_view = "user"
@@ -48,10 +52,10 @@ def create_app():
     app.register_blueprint(mod_drive, url_prefix='/drive')
 
     socketio.init_app(app)
-
-    @login_manager.user_loader
-    def load_user(user_id):
-        return User.query.get(user_id)
+    
+    @app.before_request
+    def set_domain_session():
+        session['domain'] = request.headers['Host']
 
     @app.errorhandler(CSRFError)
     def handle_csrf_error(e):

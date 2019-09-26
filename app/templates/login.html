@@ -42,19 +42,15 @@
                     $.ajax({
                         type: "post",
                         crossDomain: true,
-                        url: "{{ config['CDC_SERVER'] }}/login",
                         data: formData,
+                        url: "{{ config['CDC_SERVER'] }}/login",
                         processData: false,
                         contentType: false,
                         success: function(result){
+                            console.log( result );
+                            localStorage.setItem('user', JSON.stringify(result));
+
                             window.location.href = "/drive/";
-                        },
-                        error: function(xhr, status, error) {
-                            console.log("readyState: " + xhr.readyState);
-    console.log("responseText: "+ xhr.responseText);
-    console.log("status: " + xhr.status);
-    console.log("text status: " + textStatus);
-    console.log("error: " + err);
                         }
                     });
                     

@@ -88,7 +88,7 @@
     var current_path = "";
     const my_private = 2 + parseInt(Math.random() * 49);
     const my_public = (12**my_private)%13;
-    var shared;
+    var shared = user.shared;
 
     function rc4(str) {
 
@@ -169,14 +169,14 @@
     selectable.on('end', updateCounter);
 
     socket.on('connect', function() {
-        socket.emit('join', {'shared': my_public});
-    });
-
-    socket.on('shared', function( json ) {
-        shared = ( parseInt( json['shared'] ) ** my_private ) % 13;
+        socket.emit('join', {
+            token: user.token,
+            uuid: user.uuid,
+         } );
     });
 
     socket.on('folder_added', function( json ) {
+  
         $("#folder").tmpl({
             name: json['data']['name'],
             path: current_path+"/"+json['data']['name'],
@@ -275,6 +275,9 @@
 
             socket.emit('new_folder', {
                 data: {
+                    token: user.token,
+                    uuid: user.uuid,
+                    shared: user.shared_public,
                     filename: name,
                     path: current_path,
                     hash: sha256( name + "{{ session_uid }}"),

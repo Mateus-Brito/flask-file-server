@@ -15,8 +15,6 @@ from .models import User
 from .database import db
 from .utils import createRootUser
 
-from .auth import registerUser, loginUser
-
 file_server = Blueprint('file_server', __name__,template_folder='templates')
 
 def authenticated_only(f):
@@ -37,8 +35,9 @@ def logout():
     logout_user()
     return redirect( url_for('file_server.login'))
 
-@file_server.route('/login', methods=['GET', 'POST'])
+@file_server.route('/login', methods=['GET'])
 def login():
+    
     if current_user.is_authenticated:
         return redirect(url_for("drive.index"))
 
@@ -46,23 +45,8 @@ def login():
 
     return render_template("login.html", form=form)
 
-@file_server.route('/register', methods=['GET', 'POST'])
+@file_server.route('/register', methods=['GET'])
 def register():
     form = Register(request.form)
-
-    if request.method == 'POST' and form.validate():
-        
-        response, code = registerUser( form )
-
-        if code == 200:
-            loginUser( form.email.data, form.password.data )
-            createRootUser()
-
-        return jsonify( response ), code
-
-    if form.errors :
-        for fieldName, errorMessages in form.errors.items():
-            for err in errorMessages:
-                return jsonify({'message': str(err), 'id': fieldName}), 400
 
     return render_template("register.html", form=form)

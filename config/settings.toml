@@ -1,6 +1,6 @@
 [default]
 tester='12345'
-CDC_SERVER = 'localhost:8000'
+CDC_SERVER = 'http://localhost:8000'
 
 [development]
 TESTING = false
